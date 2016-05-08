@@ -294,7 +294,6 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 	var $OutputIntentRoot;
 	var $InfoRoot;
 	var $associatedFilesRoot;
-
 	var $current_filename;
 	var $parsers;
 	var $current_parser;
@@ -11964,6 +11963,13 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 
 	function _escapeName($s)
 	{
+		return strtr($s, array('/' => '#2F'));
+	}
+
+	//
+	// as described in 3.2.4 “Name Objects' of PDF1.7 reference
+	//
+	function _escapeName($s) {
 		return strtr($s, array('/' => '#2F'));
 	}
 
