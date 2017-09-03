@@ -3,12 +3,18 @@
 namespace Mpdf\Image;
 
 use Mpdf\Cache;
-use Mpdf\Color\ColorConvertor;
+use Mpdf\Color\ColorConverter;
+use Mpdf\Color\ColorModeConverter;
 use Mpdf\CssManager;
 use Mpdf\Gif\Gif;
+use Mpdf\Language\LanguageToFontInterface;
+use Mpdf\Language\ScriptToLanguageInterface;
+use Mpdf\Log\Context as LogContext;
 use Mpdf\Mpdf;
 use Mpdf\Otl;
-use Mpdf\SizeConvertor;
+use Mpdf\SizeConverter;
+
+use Psr\Log\LoggerInterface;
 
 class ImageProcessor
 {
@@ -29,14 +35,19 @@ class ImageProcessor
 	private $cssManager;
 
 	/**
-	 * @var \Mpdf\SizeConvertor
+	 * @var \Mpdf\SizeConverter
 	 */
-	private $sizeConvertor;
+	private $sizeConverter;
 
 	/**
-	 * @var \Mpdf\Color\ColorConvertor
+	 * @var \Mpdf\Color\ColorConverter
 	 */
-	private $colorConvertor;
+	private $colorConverter;
+
+	/**
+	 * @var \Mpdf\Color\ColorModeConverter
+	 */
+	private $colorModeConverter;
 
 	/**
 	 * @var \Mpdf\Cache
@@ -63,14 +74,44 @@ class ImageProcessor
 	 */
 	private $wmf;
 
-	public function __construct(Mpdf $mpdf, Otl $otl, CssManager $cssManager, SizeConvertor $sizeConvertor, ColorConvertor $colorConvertor, Cache $cache)
-	{
+	/**
+	 * @var \Mpdf\Language\LanguageToFontInterface
+	 */
+	private $languageToFont;
+
+	/**
+	 * @var \Mpdf\Language\ScriptToLanguageInterface
+	 */
+	public $scriptToLanguage;
+
+	/**
+	 * @var \Psr\Log\LoggerInterface
+	 */
+	public $logger;
+
+	public function __construct(
+		Mpdf $mpdf,
+		Otl $otl,
+		CssManager $cssManager,
+		SizeConverter $sizeConverter,
+		ColorConverter $colorConverter,
+		ColorModeConverter $colorModeConverter,
+		Cache $cache,
+		LanguageToFontInterface $languageToFont,
+		ScriptToLanguageInterface $scriptToLanguage,
+		LoggerInterface $logger
+	) {
+
 		$this->mpdf = $mpdf;
 		$this->otl = $otl;
 		$this->cssManager = $cssManager;
-		$this->sizeConvertor = $sizeConvertor;
-		$this->colorConvertor = $colorConvertor;
+		$this->sizeConverter = $sizeConverter;
+		$this->colorConverter = $colorConverter;
+		$this->colorModeConverter = $colorModeConverter;
 		$this->cache = $cache;
+		$this->languageToFont = $languageToFont;
+		$this->scriptToLanguage = $scriptToLanguage;
+		$this->logger = $logger;
 
 		$this->guesser = new ImageTypeGuesser();
 
@@ -135,12 +176,14 @@ class ImageProcessor
 			if ($orig_srcpath && $this->mpdf->basepathIsLocal && $check = @fopen($orig_srcpath, "rb")) {
 				fclose($check);
 				$file = $orig_srcpath;
+				$this->logger->debug(sprintf('Fetching (file_get_contents) content of file "%s" with local basepath', $file), ['context' => LogContext::REMOTE_CONTENT]);
 				$data = file_get_contents($file);
 				$type = $this->guesser->guess($data);
 			}
 
 			if (!$data && $check = @fopen($file, "rb")) {
 				fclose($check);
+				$this->logger->debug(sprintf('Fetching (file_get_contents) content of file "%s" with non-local basepath', $file), ['context' => LogContext::REMOTE_CONTENT]);
 				$data = file_get_contents($file);
 				$type = $this->guesser->guess($data);
 			}
@@ -174,7 +217,7 @@ class ImageProcessor
 
 		// SVG
 		if ($type == 'svg') {
-			$svg = new Svg($this->mpdf, $this->otl, $this->cssManager, $this->sizeConvertor, $this->colorConvertor);
+			$svg = new Svg($this->mpdf, $this->otl, $this->cssManager, $this->sizeConverter, $this->colorConverter, $this->languageToFont, $this->scriptToLanguage);
 			$family = $this->mpdf->FontFamily;
 			$style = $this->mpdf->FontStyle;
 			$size = $this->mpdf->FontSizePt;
@@ -225,7 +268,7 @@ class ImageProcessor
 
 				$im = @imagecreatefromstring($data);
 				if ($im) {
-					$tempfile = $this->cache->tempFilename('_tempImgPNG' . md5($file) . mt_rand(1, 10000) . '.png');
+					$tempfile = $this->cache->tempFilename('_tempImgPNG' . md5($file) . random_int(1, 10000) . '.png');
 					imageinterlace($im, false);
 					$check = @imagepng($im, $tempfile);
 					if (!$check) {
@@ -459,7 +502,7 @@ class ImageProcessor
 				$w = imagesx($im);
 				$h = imagesy($im);
 				if ($im) {
-					$tempfile =  $this->cache->tempFilename('_tempImgPNG' . md5($file) . mt_rand(1, 10000) . '.png');
+					$tempfile =  $this->cache->tempFilename('_tempImgPNG' . md5($file) . random_int(1, 10000) . '.png');
 
 					// Alpha channel set (including using tRNS for Paletted images)
 					if ($pngalpha) {
@@ -551,7 +594,7 @@ class ImageProcessor
 							imagegammacorrect($im, $gamma, 2.2);
 						}
 
-						$tempfile_alpha =  $this->cache->tempFilename('_tempMskPNG' . md5($file) . mt_rand(1, 10000) . '.png');
+						$tempfile_alpha =  $this->cache->tempFilename('_tempMskPNG' . md5($file) . random_int(1, 10000) . '.png');
 
 						$check = @imagepng($imgalpha, $tempfile_alpha);
 
@@ -775,7 +818,7 @@ class ImageProcessor
 
 				$im = @imagecreatefromstring($data);
 				if ($im) {
-					$tempfile = $this->cache->tempFilename('_tempImgPNG' . md5($file) . mt_rand(1, 10000) . '.png');
+					$tempfile = $this->cache->tempFilename('_tempImgPNG' . md5($file) . random_int(1, 10000) . '.png');
 					imagealphablending($im, false);
 					imagesavealpha($im, false);
 					imageinterlace($im, false);
@@ -892,7 +935,7 @@ class ImageProcessor
 		} elseif ($type == 'wmf') {
 
 			if (empty($this->wmf)) {
-				$this->wmf = new Wmf($this->mpdf, $this->colorConvertor);
+				$this->wmf = new Wmf($this->mpdf, $this->colorConverter);
 			}
 
 			$wmfres = $this->wmf->_getWMFimage($data);
@@ -927,7 +970,7 @@ class ImageProcessor
 					return $this->imageError($file, $firsttime, 'Error parsing image file - image type not recognised, and not supported by GD imagecreate');
 				}
 
-				$tempfile = $this->cache->tempFilename('_tempImgPNG' . md5($file) . mt_rand(1, 10000) . '.png');
+				$tempfile = $this->cache->tempFilename('_tempImgPNG' . md5($file) . random_int(1, 10000) . '.png');
 
 				imagealphablending($im, false);
 				imagesavealpha($im, false);
@@ -1073,7 +1116,7 @@ class ImageProcessor
 						$trns[2] = $this->translateValue(substr($t, 4, 2), $bpc);
 						$trnsrgb = $trns;
 						if ($targetcs == 'DeviceCMYK') {
-							$col = $this->colorConvertor->rgb2cmyk([3, $trns[0], $trns[1], $trns[2]]);
+							$col = $this->colorModeConverter->rgb2cmyk([3, $trns[0], $trns[1], $trns[2]]);
 							$c1 = intval($col[1] * 2.55);
 							$c2 = intval($col[2] * 2.55);
 							$c3 = intval($col[3] * 2.55);
@@ -1093,7 +1136,7 @@ class ImageProcessor
 							$trns = [$r, $g, $b]; // ****
 							$trnsrgb = $trns;
 							if ($targetcs == 'DeviceCMYK') {
-								$col = $this->colorConvertor->rgb2cmyk([3, $r, $g, $b]);
+								$col = $this->colorModeConverter->rgb2cmyk([3, $r, $g, $b]);
 								$c1 = intval($col[1] * 2.55);
 								$c2 = intval($col[2] * 2.55);
 								$c3 = intval($col[3] * 2.55);
@@ -1122,7 +1165,7 @@ class ImageProcessor
 					}
 
 					if ($targetcs == 'DeviceCMYK') {
-						$col = $this->colorConvertor->rgb2cmyk([3, $r, $g, $b]);
+						$col = $this->colorModeConverter->rgb2cmyk([3, $r, $g, $b]);
 						$c1 = intval($col[1] * 2.55);
 						$c2 = intval($col[2] * 2.55);
 						$c3 = intval($col[3] * 2.55);
@@ -1178,7 +1221,7 @@ class ImageProcessor
 				if ($dpi) {
 					$minfo['set-dpi'] = $dpi;
 				}
-				$tempfile = '_tempImgPNG' . md5($data) . mt_rand(1, 10000) . '.png';
+				$tempfile = '_tempImgPNG' . md5($data) . random_int(1, 10000) . '.png';
 				$imgmask = count($this->mpdf->images) + 1;
 				$minfo['i'] = $imgmask;
 				$this->mpdf->images[$tempfile] = $minfo;
@@ -1289,6 +1332,8 @@ class ImageProcessor
 		if ($firsttime && ($this->mpdf->showImageErrors || $this->mpdf->debug)) {
 			throw new \Mpdf\MpdfImageException(sprintf('%s (%s)', $msg, $file));
 		}
+
+		$this->logger->warning(sprintf('%s (%s)', $msg, $file), ['context' => LogContext::IMAGES]);
 	}
 
 }

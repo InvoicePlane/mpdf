@@ -1,19 +1,28 @@
-mPDF is a PHP class which generates PDF files from UTF-8 encoded HTML. It is based on [FPDF](http://www.fpdf.org/)
-and [HTML2FPDF](http://html2fpdf.sourceforge.net/) (see [CREDITS](CREDITS.txt)), with a number of enhancements.
-mPDF was written by Ian Back and is released under the [GNU GPL v2 licence](LICENSE.txt).
+mPDF is a PHP library which generates PDF files from UTF-8 encoded HTML.
+
+It is based on [FPDF](http://www.fpdf.org/) and [HTML2FPDF](http://html2fpdf.sourceforge.net/)
+(see [CREDITS](CREDITS.txt)), with a number of enhancements. mPDF was written by Ian Back and is released
+under the [GNU GPL v2 licence](LICENSE.txt).
 
 [![Build Status](https://travis-ci.org/mpdf/mpdf.svg?branch=development)](https://travis-ci.org/mpdf/mpdf)
 
-> Note: If you are viewing this file on mPDF Github repository homepage, please note that the default repository
-> branch is `development` which can differ from the last stable release.
+> Note: If you are viewing this file on mPDF Github repository homepage or on Packagist, please note that
+> the default repository branch is `development` which can differ from the last stable release.
 
 Requirements
 ============
 
-mPDF 7.0 requires PHP `^5.6 || ~7.0.0 || ~7.1.0`. PHP `mbstring` and `gd` extensions have to be loaded.
+**mPDF 7.0** requires PHP `^5.6 || ~7.0.0 || ~7.1.0`. PHP `mbstring` and `gd` extensions have to be loaded.
 
-Additional extensions may be required for some advanced features such as `zlib` for compression of embedded
-resources such as fonts or `bcmath` for generating barcodes.
+Additional extensions may be required for some advanced features such as `zlib` for compression of output and
+embedded resources such as fonts, `bcmath` for generating barcodes or `xml` for character set conversion
+and SVG handling.
+
+Support us
+==========
+
+Consider supporting development of mPDF with a donation of any value. [Donation button][1] can be found on the
+[main page of the documentation][1].
 
 Installation
 ============
@@ -27,7 +36,7 @@ $ composer require mpdf/mpdf
 Usage
 =====
 
-The simplest usage of the library would be as follows:
+The simplest usage (since version 7.0) of the library would be as follows:
 
 ```php
 <?php
@@ -40,7 +49,7 @@ $mpdf->Output();
 
 ```
 
-This will output the PDF inline to the browser as application/pdf Content-type.
+This will output the PDF inline to the browser as `application/pdf` Content-type.
 
 Setup & Configuration
 =====================
@@ -48,8 +57,9 @@ Setup & Configuration
 All [configuration directives](https://mpdf.github.io/reference/mpdf-variables/overview.html) can
 be set by the `$config` parameter of the constructor.
 
-It is recommended to set one's own temporary directory via `tempDir` and `fontTempDir` configuration variables.
-The directory must have write permissions (mode `775` is recommended).
+It is recommended to set one's own temporary directory via `tempDir` configuration variable.
+The directory must have write permissions (mode `775` is recommended) for users using mPDF
+(typically `cli`, `webserver`, `fpm`).
 
 
 ```php
@@ -64,7 +74,7 @@ By default, the temporary directory will be inside vendor directory and will hav
 
 For more information about custom temporary directory see the note on
 [Folder for temporary files](https://mpdf.github.io/installation-setup/folders-for-temporary-files.html)
-in the section on Installation & Setup in the [manual](https://mpdf.github.io/).
+in the section on Installation & Setup in the [manual][1].
 
 If you have problems, please read the section on
 [troubleshooting](https://mpdf.github.io/troubleshooting/known-issues.html) in the manual.
@@ -74,10 +84,12 @@ Online manual
 
 Online manual is available at https://mpdf.github.io/.
 
+For general questions or troubleshooting please use the [mpdf tag](https://stackoverflow.com/questions/tagged/mpdf) at Stack Overflow (and not the project's issue tracker).
+
 Contributing
 ============
 
-See [CONTRIBUTING.md](https://github.com/mpdf/mpdf/blob/development/.github/CONTRIBUTING.md) file in the project.
+Please read before submitting issues and pull requests the [CONTRIBUTING.md](https://github.com/mpdf/mpdf/blob/development/.github/CONTRIBUTING.md) file.
 
 Unit Testing
 ============
@@ -91,3 +103,5 @@ To execute tests, run `vendor/bin/phpunit` from the command line while in the mP
 
 Any assistance writing unit tests for mPDF is greatly appreciated. If you'd like to help, please
 note that any PHP file located in the `/tests/` directory will be autoloaded when unit testing.
+
+[1]: https://mpdf.github.io
