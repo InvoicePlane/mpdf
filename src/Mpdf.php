@@ -794,9 +794,6 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 
 	var $customProperties; // array of custom document properties
 
-	var $associatedFiles; // associated files (see SetAssociatedFiles below)
-	var $additionalXmpRdf; // additional rdf added in xmp
-
 	var $aliasNbPg; //alias for total number of pages
 	var $aliasNbPgGp; //alias for total number of pages in page group
 
