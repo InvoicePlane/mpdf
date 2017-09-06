@@ -1271,12 +1271,6 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 		// Line width (0.2 mm)
 		$this->LineWidth = .567 / Mpdf::SCALE;
 
-		// To make the function Footer() work - replaces {nb} with page number
-		$this->AliasNbPages();
-		$this->AliasNbPageGroups();
-
-		// $this->aliasNbPgHex = '{nbHEXmarker}';	// mPDF 6 deleted
-		// $this->aliasNbPgGpHex = '{nbpgHEXmarker}';	// mPDF 6 deleted
 		// Enable all tags as default
 		$this->DisableTags();
 		// Full width display mode
@@ -1816,15 +1810,15 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 		$this->anchor2Bookmark = $x;
 	}
 
-	function AliasNbPages($alias = '{nb}')
+	public function AliasNbPages($alias = '{nb}')
 	{
-		//Define an alias for total number of pages
+		// Define an alias for total number of pages
 		$this->aliasNbPg = $alias;
 	}
 
-	function AliasNbPageGroups($alias = '{nbpg}')
+	public function AliasNbPageGroups($alias = '{nbpg}')
 	{
-		//Define an alias for total number of pages in a group
+		// Define an alias for total number of pages in a group
 		$this->aliasNbPgGp = $alias;
 	}
 
