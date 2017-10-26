@@ -11961,11 +11961,6 @@ class Mpdf implements \Psr\Log\LoggerAwareInterface
 		return strtr($s, [')' => '\\)', '(' => '\\(', '\\' => '\\\\', chr(13) => '\r']);
 	}
 
-	function _escapeName($s)
-	{
-		return strtr($s, array('/' => '#2F'));
-	}
-
 	//
 	// as described in 3.2.4 “Name Objects' of PDF1.7 reference
 	//
